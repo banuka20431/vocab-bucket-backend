@@ -10,7 +10,7 @@ app.use(express.json());
 
 const allowedOrigins = [
   process.env.EXTENSION_ORIGIN,
-  "chrome-extension://plogpdojpfcdkcohgcnkppkjjmjgdcan",
+  process.env.LOCAL_EXTENSION_ORIGIN,
 ];
 
 const corsOptions = {

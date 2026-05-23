@@ -139,4 +139,4 @@ When deploying this API to a hosting provider:
 
 ## 7. License
 
-This project is licensed under the ISC License.
+This project is licensed under the MIT License.

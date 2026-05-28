@@ -36,9 +36,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-app.listen(process.env.PORT, () => {
-  console.log("[SUCCESS] Server listening...");
-});
 
 app.post("/metadata", async (req, res) => {
   // Extract and validate the request body
@@ -101,4 +98,9 @@ app.post("/metadata", async (req, res) => {
   res.json({
     meta: JSON.stringify(wordMetaData),
   });
+});
+
+
+app.listen(process.env.PORT, () => {
+  console.log("[SUCCESS] Server listening...");
 });

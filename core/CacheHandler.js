@@ -1,14 +1,14 @@
 import wordTracker from "./redisClient.js";
 
 export async function fetchWordFromCache(word) {
-  if (!wordTracker) {
+  if (!wordTracker.connect()) {
     console.log(`[ERROR] WordTracker is not ready!`);
     return null;
   }
 
   try {
     const cacheKey = `cache:metadata:${word}`;
-    const cachedWordData = await redisClient.get(cacheKey);
+    const cachedWordData = await (await wordTracker).client.get(cacheKey);
     if (cachedWordData) {
       console.log(`[CACHE HIT] Serving "${word}" directly from Redis...`);
       return JSON.parse(cachedWordData);
@@ -20,22 +20,22 @@ export async function fetchWordFromCache(word) {
   }
 }
 
-export async function trackWord(word) {
+export async function trackWord(wordMetadata) {
   try {
-    await wordTracker.setOrIncrementWordCache(word.spelling);
+    await wordTracker.setOrIncrementWordCache(wordMetadata.spelling);
 
-    const wordCount = await wordTracker.getWordCount(word.spelling);
+    const wordCount = await wordTracker.getWordCount(wordMetadata.spelling);
 
     const threshold = parseInt(process.env.CACHE_HIT_THRESHOLD) || 1;
 
     if (wordCount >= threshold) {
       console.log(
-        `[PROMOTING] "${word}" hit ${wordCount} requests. Saving to cache.`,
+        `[PROMOTING] "${wordMetadata.spelling}" hit ${wordCount} requests. Saving to cache.`,
       );
-
-      (await wordTracker).cacheWordMetadata(word);
+      await wordTracker.cacheWordMetadata(wordMetadata);
     }
-    } catch (err) {
+    
+  } catch (err) {
     console.log(`[ERROR] Init word tracking failed: ${err}`);
     return null;
   }

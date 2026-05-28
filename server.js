@@ -6,6 +6,7 @@ import cors from "cors";
 import Extractor from "./core/metadataExtractor.js";
 import { fetchWordFromCache, trackWord } from "./core/CacheHandler.js";
 
+
 dotenv.config();
 
 const app = express();
@@ -58,7 +59,7 @@ app.post("/metadata", async (req, res) => {
   }
 
   // Check cache and return cached metadata if present
-  const cachedMetadata = await fetchWordFromCache(incomingData.word);
+  const cachedMetadata = await fetchWordFromCache(requestedWord);
 
   if (cachedMetadata != null) {
     return res.json({ meta: JSON.stringify(cachedMetadata) });
@@ -66,7 +67,7 @@ app.post("/metadata", async (req, res) => {
 
   // On cache miss: fetch word metadata from external API and validate response
 
-  console.log(`[CACHE MISS] Fetching "${word}"  metadata from API...`);
+  console.log(`[CACHE MISS] Fetching "${requestedWord}"  metadata from API...`);
 
   const url = `${process.env.API_URL || api_url}/${incomingData.word}?key=${process.env.API_KEY}`;
 

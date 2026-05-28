@@ -32,7 +32,7 @@ class WordTracker {
   }
 
   async cacheWordMetadata(wordMetaData) {
-    const key = `cache:metadata:${wordMetaData.word}`;
+    const key = `cache:metadata:${wordMetaData.spelling}`;
     await this.client.set(key, wordMetaData);
   }
 
@@ -42,4 +42,4 @@ class WordTracker {
   }
 }
 
-export default new WordTracker().connect();
+export default await new WordTracker().connect();

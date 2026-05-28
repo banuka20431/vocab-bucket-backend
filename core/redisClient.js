@@ -1,6 +1,6 @@
 import { createClient } from "redis";
 
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 dotenv.config();
 class WordTracker {
@@ -26,9 +26,9 @@ class WordTracker {
       await this.client.set(key, "1", {
         EX: parseInt(process.env.CACHE_TRACKED_WORD_TTL_SEC) || 2592000,
       });
+    } else {
+      await this.client.incr(key);
     }
-
-    await this.client.incr(key);
   }
 
   async cacheWordMetadata(wordMetaData) {

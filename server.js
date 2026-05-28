@@ -1,11 +1,14 @@
-import Extractor from "./Extractor.js";
 import dotenv from "dotenv";
+
 import express from "express";
 import cors from "cors";
 
-dotenv.config();
-const app = express();
+import Extractor from "./core/metadataExtractor.js";
+import { fetchWordFromCache, trackWord } from "./core/CacheHandler.js";
 
+dotenv.config();
+
+const app = express();
 app.use(express.json());
 
 const allowedOrigins = [
@@ -13,12 +16,18 @@ const allowedOrigins = [
   process.env.LOCAL_EXTENSION_ORIGIN,
 ];
 
+const api_url = "https://www.dictionaryapi.com/api/v3/references/learners/json";
+
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('chrome-extension://')) {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      origin.startsWith("chrome-extension://")
+    ) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error("[ERROR] Not allowed by CORS"));
     }
   },
   methods: ["POST"],
@@ -27,40 +36,66 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.listen(process.env.PORT, () => {
-  console.log("Server listening successfully!");
+  console.log("[SUCCESS] Server listening...");
 });
 
 app.post("/metadata", async (req, res) => {
-  const incomingData = req.body;
+  // Extract and validate the request body
+  const incomingData = req?.body;
 
-  if (!incomingData) {
-    res.status(500).json("invalid request");
-    return;
+  if (incomingData == undefined) {
+    return res
+      .status(500)
+      .json("[ERROR] Invalid request: unresolvable request!");
   }
 
-  console.log(`Incoming data: `, incomingData);
+  console.log(`[INFO] Incoming data: `, incomingData);
 
-  const url = `${process.env.API_URL}/${incomingData.word}?key=${process.env.API_KEY}`;
+  const requestedWord = incomingData?.word;
+
+  if (requestedWord == undefined || typeof requestedWord != "string") {
+    return res.status(500).json("[ERROR] Invalid request: invalid word!");
+  }
+
+  // Check cache and return cached metadata if present
+  const cachedMetadata = await fetchWordFromCache(incomingData.word);
+
+  if (cachedMetadata != null) {
+    return res.json({ meta: JSON.stringify(cachedMetadata) });
+  }
+
+  // On cache miss: fetch word metadata from external API and validate response
+
+  console.log(`[CACHE MISS] Fetching "${word}"  metadata from API...`);
+
+  const url = `${process.env.API_URL || api_url}/${incomingData.word}?key=${process.env.API_KEY}`;
 
   const response = await fetch(url);
 
   if (!response.ok) {
-    console.error(`Metadata fetch failed with status: ${res.status}`);
-    return false;
+    const errmsg = `[ERROR] Metadata fetch failed with status: ${response.status}`;
+    console.error(errmsg);
+    return res.status(500).json(errmsg);
   }
 
-  const data = await response.json();
+  const data = await response?.json();
 
-  if (Array.isArray(data) && data.length == 0) {
-    console.error(`Metadata fetch failed!`);
+  if (data == null || (Array.isArray(data) && data?.length == 0)) {
+    const errmsg = "[ERROR] Invalid fetch: no data were fetched";
+    console.log(errmsg);
+    return res.status(500).json(errmsg);
   }
 
-  console.log(`Response json`, data);
+  console.log(`[INFO] Response json`, data);
+
+  // Extract required metadata from the API response
 
   const extractor = new Extractor(data[0]);
   const wordMetaData = extractor.getMetaData();
 
-  console.log(`extracted metadata:\n`, wordMetaData);
+  console.log(`[INFO] Extracted metadata:\n`, wordMetaData);
+
+  await trackWord(wordMetaData);
 
   res.json({
     meta: JSON.stringify(wordMetaData),

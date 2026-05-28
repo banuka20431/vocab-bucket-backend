@@ -11,14 +11,51 @@ Its primary purpose is to securely handle requests to the Merriam-Webster Learne
 * **Node.js & Express:** Core server architecture and routing.
 * **CORS:** Middleware configured to strictly accept requests only from the verified Vocab Bucket extension origins.
 * **Dotenv:** Environment variable management for API keys and port configurations.
+* **Redis:** Optional caching layer used to store promoted word metadata and hit counts.
 * **ES6 Modules:** Modern JavaScript syntax (`import`/`export`) for clean, maintainable code.
 
 ---
 
 ## 2. Project Structure
+
+## 5. Caching (Redis)
+
+This project optionally uses Redis as a lightweight caching layer to reduce external API calls and improve response times for frequently requested words. Caching is implemented as a promotion-based cache: words are tracked with a hit counter and only promoted to the metadata cache when they exceed a configurable threshold.
+
+- **Promotion flow:** Each `POST /metadata` request increments a per-word counter. When that counter >= `CACHE_HIT_THRESHOLD`, the cleaned metadata for that word is stored in Redis under `cache:metadata:<word>`.
+- **Stored data:** Cached metadata is the same `meta` object returned on a fresh fetch (serialized JSON). Counters are stored under `cache:count:<word>`.
+- **TTL:** Counters and cached metadata use configurable TTLs so stale entries expire automatically.
+
+Environment variables controlling cache behavior (examples in `.env`):
+
+```env
+REDIS_URL=redis://127.0.0.1:6379
+CACHE_TTL_SEC=2592000            # TTL for per-word hit counters (seconds)
+CACHE_HIT_THRESHOLD=1            # Promote to cache after this many hits
+```
+
+To use Redis locally you can run it with Docker:
+
+```bash
+docker run -p 6379:6379 -d redis:7-alpine
+```
+
+Install the Redis client dependency (if not already present):
+
+```bash
+npm install redis
+```
+
+Notes:
+- The server code expects `REDIS_URL` to point to your Redis instance. If Redis is not available, the server should fall back to live fetches (implementation dependent).
+- TTL and threshold defaults are set to reasonable values, but adjust them to fit your traffic and storage preferences.
+
 ```text
 vocab-bucket-backend/
-├── Extractor.js       # Utility class for parsing and cleaning Merriam-Webster JSON
+├── core/              # Core helpers: Extractor, cache handler, redis tracker
+│   ├── Extractor.js
+│   ├── CacheHandler.js
+│   └── WordTracker.js
 ├── server.js          # Express application entry point and route definitions
 ├── package.json       # Project dependencies and npm scripts
 ├── .env.example       # Template for required environment variables

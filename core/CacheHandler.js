@@ -1,4 +1,7 @@
 import wordTracker from "./redisClient.js";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export async function fetchWordFromCache(word) {
   if (!wordTracker.connect()) {

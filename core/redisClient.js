@@ -1,8 +1,4 @@
 import { createClient } from "redis";
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 class WordTracker {
   constructor() {
     this.client = createClient({
@@ -24,19 +20,18 @@ class WordTracker {
     const key = `cache:count:${word}`;
     if ((await this.client.exists(key)) != 1) {
       await this.client.set(key, "1", {
-        expiration: process.env.TTL_SEC || 600,
+        EX: parseInt(process.env.CACHE_TRACKED_WORD_TTL_SEC) || 2592000,
       });
-      return true;
     }
 
-    this.client.incr(key);
-
-    return false;
+    await this.client.incr(key);
   }
 
   async cacheWordMetadata(wordMetaData) {
     const key = `cache:metadata:${wordMetaData.spelling}`;
-    await this.client.set(key, JSON.stringify(wordMetaData));
+    await this.client.set(key, JSON.stringify(wordMetaData), {
+      EX: parseInt(process.env.CACHE_METADATA_TTL_SEC) || 2592000,
+    });
   }
 
   async getWordCount(word) {

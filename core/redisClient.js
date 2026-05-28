@@ -36,7 +36,7 @@ class WordTracker {
 
   async cacheWordMetadata(wordMetaData) {
     const key = `cache:metadata:${wordMetaData.spelling}`;
-    await this.client.set(key, wordMetaData);
+    await this.client.set(key, JSON.stringify(wordMetaData));
   }
 
   async getWordCount(word) {

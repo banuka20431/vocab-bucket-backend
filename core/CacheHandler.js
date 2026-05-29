@@ -7,10 +7,10 @@ export async function fetchWordFromCache(word) {
   }
 
   try {
-    const cachedWordData = await wordTracker.getCachedMetadata(word);
-    if (cachedWordData) {
+    const cachedWordMetaData = await wordTracker.getCachedMetadata(word);
+    if (cachedWordMetaData) {
       console.log(`[CACHE HIT] Serving "${word}" directly from Redis...`);
-      return JSON.parse(cachedWordData);
+      return cachedWordMetaData;
     }
     return null;
   } catch (err) {
@@ -19,27 +19,22 @@ export async function fetchWordFromCache(word) {
   }
 }
 
-export async function trackWord(wordMetadata) {
+export async function trackWord(wordMetadata, requestedWord) {
   try {
-    await wordTracker.setOrIncrementWordCount(wordMetadata.spelling);
+    await wordTracker.setOrIncrementWordCount(requestedWord);
 
-    const wordCount = await wordTracker.getWordCount(wordMetadata.spelling);
+    const wordCount = await wordTracker.getWordCount(requestedWord);
 
     const threshold = parseInt(process.env.CACHE_HIT_THRESHOLD) || 1;
 
     if (wordCount >= threshold) {
       console.log(
-        `[PROMOTING] "${wordMetadata.spelling}" hit ${wordCount} requests. Saving to cache.`,
+        `[PROMOTING] "${requestedWord}" hit ${wordCount} requests. Saving to cache.`,
       );
-      await wordTracker.cacheWordMetadata(wordMetadata);
+      await wordTracker.cacheWordMetadata(wordMetadata, requestedWord);
     }
   } catch (err) {
     console.log(`[ERROR] Init word tracking failed: ${err}`);
     return null;
   }
-}
-
-export async function replaceWordCount(newWord, previousWord) {
-  wordTracker.deleteWordCount(previousWord);
-  wordTracker.setOrIncrementWordCount(newWord);
 }

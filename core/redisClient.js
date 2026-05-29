@@ -30,8 +30,8 @@ class WordTracker {
     }
   }
 
-  async cacheWordMetadata(wordMetaData) {
-    const key = `cache:metadata:${wordMetaData.spelling}`;
+  async cacheWordMetadata(wordMetaData, requestedWord) {
+    const key = `cache:metadata:${requestedWord}`;
     await this.client.set(key, JSON.stringify(wordMetaData), {
       EX: parseInt(process.env.CACHE_METADATA_TTL_SEC) || 2592000,
     });

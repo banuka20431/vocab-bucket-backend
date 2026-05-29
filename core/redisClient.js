@@ -3,7 +3,7 @@ import { createClient } from "redis";
 class WordTracker {
   constructor() {
     this.client = createClient({
-      url: process.env.REDIS_URL || "redis://default:140707780035784@127.0.0.1:6379",
+      url: process.env.REDIS_URL,
     });
 
     this.client.on("error", (err) => console.error("Redis Client Error", err));
@@ -17,7 +17,7 @@ class WordTracker {
     return this;
   }
 
-  async setOrIncrementWordCache(word) {
+  async setOrIncrementWordCount(word) {
     const key = `cache:count:${word}`;
     if ((await this.client.exists(key)) == 0) {
       await this.client.set(key, "1", {
@@ -43,6 +43,11 @@ class WordTracker {
   async getWordCount(word) {
     const key = `cache:count:${word}`;
     return parseInt(await this.client.get(key));
+  }
+
+  async deleteWordCount(word) {
+    const key = `cache:count:${word}`;
+    await this.client.del(key);
   }
 }
 

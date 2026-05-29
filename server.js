@@ -4,7 +4,7 @@ import express from "express";
 import cors from "cors";
 
 import Extractor from "./core/metadataExtractor.js";
-import { fetchWordFromCache, trackWord } from "./core/CacheHandler.js";
+import { fetchWordFromCache, trackWord, replaceWordCount } from "./core/CacheHandler.js";
 
 dotenv.config();
 
@@ -86,6 +86,11 @@ app.post("/metadata", async (req, res) => {
   const wordMetaData = extractor.getMetaData();
 
   console.log(`[INFO] Extracted metadata:\n`, wordMetaData);
+
+  // Check if API responded with slightly different word than requested
+  if(wordMetaData.spelling.toLowerCase() != requestedWord.toLowerCase()) {
+    replaceWordCount(wordMetaData.spelling, requestedWord);
+  }
 
   await trackWord(wordMetaData);
 

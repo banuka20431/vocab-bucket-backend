@@ -21,13 +21,13 @@ export async function fetchWordFromCache(word) {
 
 export async function trackWord(wordMetadata) {
   try {
-    await wordTracker.setOrIncrementWordCache(wordMetadata.spelling);
+    await wordTracker.setOrIncrementWordCount(wordMetadata.spelling);
 
     const wordCount = await wordTracker.getWordCount(wordMetadata.spelling);
 
     const threshold = parseInt(process.env.CACHE_HIT_THRESHOLD) || 1;
 
-    if (wordCount > threshold) {
+    if (wordCount >= threshold) {
       console.log(
         `[PROMOTING] "${wordMetadata.spelling}" hit ${wordCount} requests. Saving to cache.`,
       );
@@ -37,4 +37,9 @@ export async function trackWord(wordMetadata) {
     console.log(`[ERROR] Init word tracking failed: ${err}`);
     return null;
   }
+}
+
+export async function replaceWordCount(newWord, previousWord) {
+  wordTracker.deleteWordCount(previousWord);
+  wordTracker.setOrIncrementWordCount(newWord);
 }

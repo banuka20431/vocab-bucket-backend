@@ -1,7 +1,4 @@
 import wordTracker from "./redisClient.js";
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 export async function fetchWordFromCache(word) {
   if (!wordTracker.connect()) {
@@ -10,8 +7,7 @@ export async function fetchWordFromCache(word) {
   }
 
   try {
-    const cacheKey = `cache:metadata:${word}`;
-    const cachedWordData = await (await wordTracker).client.get(cacheKey);
+    const cachedWordData = await wordTracker.getCachedMetadata(word);
     if (cachedWordData) {
       console.log(`[CACHE HIT] Serving "${word}" directly from Redis...`);
       return JSON.parse(cachedWordData);
@@ -31,13 +27,12 @@ export async function trackWord(wordMetadata) {
 
     const threshold = parseInt(process.env.CACHE_HIT_THRESHOLD) || 1;
 
-    if (wordCount >= threshold) {
+    if (wordCount == threshold) {
       console.log(
         `[PROMOTING] "${wordMetadata.spelling}" hit ${wordCount} requests. Saving to cache.`,
       );
       await wordTracker.cacheWordMetadata(wordMetadata);
     }
-    
   } catch (err) {
     console.log(`[ERROR] Init word tracking failed: ${err}`);
     return null;

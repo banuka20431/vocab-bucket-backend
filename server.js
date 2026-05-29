@@ -6,7 +6,6 @@ import cors from "cors";
 import Extractor from "./core/metadataExtractor.js";
 import { fetchWordFromCache, trackWord } from "./core/CacheHandler.js";
 
-
 dotenv.config();
 
 const app = express();
@@ -21,11 +20,7 @@ const api_url = "https://www.dictionaryapi.com/api/v3/references/learners/json";
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (
-      !origin ||
-      allowedOrigins.includes(origin) ||
-      origin.startsWith("chrome-extension://")
-    ) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("[ERROR] Not allowed by CORS"));
@@ -35,7 +30,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 
 app.post("/metadata", async (req, res) => {
   // Extract and validate the request body
@@ -84,7 +78,7 @@ app.post("/metadata", async (req, res) => {
     return res.status(500).json(errmsg);
   }
 
-  console.log(`[INFO] Response json`, data);
+  console.log(`[INFO] Response is ${typeof data} of length `, data?.length);
 
   // Extract required metadata from the API response
 
@@ -99,7 +93,6 @@ app.post("/metadata", async (req, res) => {
     meta: JSON.stringify(wordMetaData),
   });
 });
-
 
 app.listen(process.env.PORT, () => {
   console.log("[SUCCESS] Server listening...");

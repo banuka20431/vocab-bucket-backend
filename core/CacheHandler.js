@@ -27,7 +27,7 @@ export async function trackWord(wordMetadata) {
 
     const threshold = parseInt(process.env.CACHE_HIT_THRESHOLD) || 1;
 
-    if (wordCount == threshold) {
+    if (wordCount > threshold) {
       console.log(
         `[PROMOTING] "${wordMetadata.spelling}" hit ${wordCount} requests. Saving to cache.`,
       );

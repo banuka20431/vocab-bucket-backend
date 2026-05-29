@@ -1,7 +1,7 @@
 import wordTracker from "./redisClient.js";
 
 export async function fetchWordFromCache(word) {
-  if (!wordTracker.connect()) {
+  if (!(await wordTracker.connect())) {
     console.log(`[ERROR] WordTracker is not ready!`);
     return null;
   }
